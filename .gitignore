@@ -1,6 +1,27 @@
+# Additional files
+*.cfg
+old_test.py
+icon.py
+commands.txt
+
+# Kivy files
+*.kv
+
+# Buildozer files
+.buildozer
+*.spec
+
+# venv files
+bin/
+lib/
+lib64/
+include/
+lib64
+
 # Gradle files
 .gradle/
 build/
+release/
 
 # Local configuration file (sdk path, etc)
 local.properties
