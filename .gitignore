@@ -4,9 +4,6 @@ old_test.py
 icon.py
 commands.txt
 
-# Kivy files
-*.kv
-
 # Buildozer files
 .buildozer
 *.spec

@@ -1,0 +1,223 @@
+
+#:kivy 2.1.0
+
+<MainMenuScreen>:
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: dp(20)
+        spacing: dp(20)
+        
+        MDIconButton:
+            icon: 'theme-light-dark'
+            pos_hint: {'x': 0, 'top': 1}
+            on_release: root.toggle_theme()
+        
+        MDLabel:
+            text: 'Water Tank Volume Calculator'
+            halign: 'center'
+            font_style: 'H3'
+            
+        MDRaisedButton:
+            text: 'Convert to BBL'
+            size_hint_x: 0.7
+            pos_hint: {'center_x': .5}
+            on_release: 
+                root.manager.current = 'to_bbl'
+                
+        MDRaisedButton:
+            text: 'Convert to Inches'
+            size_hint_x: 0.7
+            pos_hint: {'center_x': .5}
+            on_release: 
+                root.manager.current = 'to_inches'
+                
+        MDRaisedButton:
+            text: 'Generate Report'
+            size_hint_x: 0.7
+            pos_hint: {'center_x': .5}
+            on_release: 
+                root.manager.current = 'generate_report'
+
+<ToBBLScreen>:
+    MDBoxLayout:
+        orientation: 'vertical'
+        spacing: dp(20)
+        padding: dp(20)
+        
+        MDIconButton:
+            icon: 'arrow-left'
+            pos_hint: {'x': 0, 'top': 1}
+            on_release: root.manager.current = 'main_menu'
+        
+        MDLabel:
+            text: 'Inches to Barrels'
+            halign: 'center'
+            font_style: 'H4'
+        
+        MDTextField:
+            id: dip_input
+            hint_text: 'Enter Dip'
+            helper_text: 'Inch'
+            helper_text_mode: 'persistent'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
+        
+        MDRaisedButton:
+            text: 'Convert'
+            pos_hint: {'center_x': .5}
+            size_hint_x: 0.7
+            on_release: root.calculate_volume()
+
+<ToInchesScreen>:
+    MDBoxLayout:
+        orientation: 'vertical'
+        spacing: dp(20)
+        padding: dp(20)
+        
+        MDIconButton:
+            icon: 'arrow-left'
+            pos_hint: {'x': 0, 'top': 1}
+            on_release: root.manager.current = 'main_menu'
+        
+        MDLabel:
+            text: 'Barrels to Inches'
+            halign: 'center'
+            font_style: 'H4'
+        
+        MDTextField:
+            id: barrel_input
+            hint_text: 'Enter Volume'
+            helper_text: 'bbl'
+            helper_text_mode: 'persistent'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
+        
+        MDRaisedButton:
+            text: 'Convert'
+            pos_hint: {'center_x': .5}
+            size_hint_x: 0.7
+            on_release: root.convert_to_inches()
+
+<GenerateReportScreen>:
+    ScrollView:
+        MDBoxLayout:
+            orientation: 'vertical'
+            padding: dp(10)
+
+            MDIconButton:
+                icon: 'arrow-left'
+                pos_hint: {'x': 0, 'top': 1}
+                on_release: root.manager.current = 'main_menu'
+                
+            MDLabel:
+                text: 'Water Report Generator'
+                halign: 'center'
+                font_style: 'H4'
+                pos_hint: {'center_x': 0.5}
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                spacing: dp(20)
+                padding: dp(20)
+
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(40)
+
+                    MDLabel:
+                        text: "Shift (Day/Night)"
+                        size_hint_x: 0.6
+
+                    MDSwitch:
+                        id: shift_switch
+                        icon_active: "weather-night"
+                        icon_inactive: "weather-sunny"
+                        icon_inactive_color: "grey"
+                        active: False
+                        pos_hint: {'center_y': 0.5}
+                        on_active: root.select_shift('night' if self.active else 'day')
+                        
+                MDBoxLayout:
+                    orientation: 'horizontal'
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(40)
+
+                    MDLabel:
+                        text: "Refilled (No/Yes)"
+                        size_hint_x: 0.6
+
+                    MDSwitch:
+                        id: filled_switch
+                        icon_active: "check"
+                        icon_inactive: "close"
+                        icon_inactive_color: "grey"
+                        active: False
+                        pos_hint: {'center_y': 0.5}
+                        on_active: root.toggle_filled(self.active)
+
+            
+                MDBoxLayout:
+                    orientation: 'vertical'
+                    spacing: dp(10)
+                    size_hint_y: None
+                    height: dp(350)
+                    width: dp(300)
+                        
+                    MDTextField:
+                        id: first_dip
+                        hint_text: 'First Dip'
+                        input_type: 'number'
+                        helper_text: 'Inch'
+                        helper_text_mode: 'persistent'
+
+                    MDBoxLayout:
+                        spacing: 30
+                        id: fill_fields
+                        height: dp(0)
+                        opacity: 0
+                        size_hint_y: None
+                        pos_hint: {'center_x': .5}
+
+                        MDTextField:
+                            id: before_fill
+                            hint_text: 'Before Refill Dip'
+                            input_type: 'number'
+                            disabled: 'True'
+                            helper_text: 'Inch'
+                            helper_text_mode: 'persistent'
+
+                        MDTextField:
+                            id: after_fill
+                            hint_text: 'After Refill Dip'
+                            input_type: 'number'
+                            disabled: 'True'
+                            helper_text: 'Inch'
+                            helper_text_mode: 'persistent'
+
+                    MDTextField:
+                        id: last_dip
+                        hint_text: 'Last Dip'
+                        input_type: 'number'
+                        helper_text: 'Inch'
+                        helper_text_mode: 'persistent'
+
+                MDRaisedButton:
+                    text: 'Generate Report'
+                    pos_hint: {'center_x': .5}
+                    size_hint_x: 0.7
+                    on_release: root.generate_report()
+
+ScreenManager:
+    MainMenuScreen:
+        name: 'main_menu'
+    ToBBLScreen:
+        name: 'to_bbl'
+    ToInchesScreen:
+        name: 'to_inches'
+    GenerateReportScreen:
+        name: 'generate_report'
