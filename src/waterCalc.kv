@@ -2,15 +2,20 @@
 #:kivy 2.1.0
 
 <MainMenuScreen>:
+    MDIconButton:
+        icon: 'cog'
+        pos_hint: {'x': 0.9, 'top': 1}
+        on_release: root.manager.current = 'settings'
+        
+    MDIconButton:
+        icon: 'theme-light-dark'
+        pos_hint: {'x': 0, 'top': 1}
+        on_release: root.toggle_theme()
+            
     MDBoxLayout:
         orientation: 'vertical'
         padding: dp(20)
         spacing: dp(20)
-        
-        MDIconButton:
-            icon: 'theme-light-dark'
-            pos_hint: {'x': 0, 'top': 1}
-            on_release: root.toggle_theme()
         
         MDLabel:
             text: 'Water Tank Volume Calculator'
@@ -37,7 +42,56 @@
             pos_hint: {'center_x': .5}
             on_release: 
                 root.manager.current = 'generate_report'
+                
+<SettingScreen>
+    MDIconButton:
+        icon: 'arrow-left'
+        pos_hint: {'x': 0, 'top': 1}
+        on_release: root.manager.current = 'main_menu'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        spacing: dp(20)
+        padding: dp(20)
+        
+        MDLabel:
+            text: 'Settings'
+            halign: 'center'
+            font_style: 'H4'
+        
+        MDTextField:
+            id: barrel_inch
+            hint_text: 'Barrel Per Inch'
+            helper_text: 'Inch'
+            helper_text_mode: 'persistent'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
+            
+        MDTextField:
+            id: total_tank_volume
+            hint_text: 'Tank Capacity'
+            helper_text: 'bbl'
+            helper_text_mode: 'persistent'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
 
+        MDTextField:
+            id: number_of_tanks
+            hint_text: 'Number of Tanks'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
+            
+        MDRaisedButton:
+            text: 'Save'
+            pos_hint: {'center_x': .5}
+            size_hint_x: 0.7
+            on_release: root.save_settings()
+        
+
+            
 <ToBBLScreen>:
     MDBoxLayout:
         orientation: 'vertical'
@@ -215,6 +269,8 @@
 ScreenManager:
     MainMenuScreen:
         name: 'main_menu'
+    SettingScreen:
+        name: 'settings'
     ToBBLScreen:
         name: 'to_bbl'
     ToInchesScreen:

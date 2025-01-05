@@ -11,6 +11,8 @@ from kivy.core.window import Window
 from kivy.lang import Builder
 from datetime import date
 import os
+import shelve
+
 
 class DialogMixin():
     def show_result_dialog(self, title, text):
@@ -46,11 +48,20 @@ class DialogMixin():
 class Calculations:
     @staticmethod
     def calculate_bbls(dip):
-        return abs(int(((dip * 5.66) - 550) * 2))
+        settings = SettingScreen().load_settings()
+        barrel_per_inch = float(settings.get("barrel_inches", 5.66))
+        volume = int(settings.get("total_tank_volume", 550))
+        number_of_tanks = int(settings.get("number_of_tanks", 2))
+        return abs(int((dip * barrel_per_inch) - volume)* number_of_tanks)
     
+    @staticmethod
     def calculate_inches(bbl):
-        singleTank = int(bbl/2)
-        return abs(int((550 - singleTank)/5.66))
+        settings = SettingScreen().load_settings()
+        barrel_per_inch = float(settings.get("barrel_inches", 5.66))
+        volume = float(settings.get("total_tank_volume", 550))
+        number_of_tanks = int(settings.get("number_of_tanks", 2))
+        singleTank = int(bbl/number_of_tanks)
+        return abs(int((volume - singleTank)/barrel_per_inch))
 
 class InputValidator:
     @staticmethod
@@ -71,7 +82,38 @@ class MainMenuScreen(MDScreen):
             app.theme_cls.theme_style = "Light"
         else: 
             app.theme_cls.theme_style = "Dark"
-                   
+    
+class SettingScreen(MDScreen, DialogMixin):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.shelve_file = "settings_rigcalc"
+    
+    def on_kv_post(self, base_widget):
+        settings = self.load_settings()
+        self.ids.barrel_inch.text = settings.get("barrel_inches", "5.66")
+        self.ids.total_tank_volume.text = settings.get("total_tank_volume", "550")
+        self.ids.number_of_tanks.text = settings.get("number_of_tanks", "2")
+        
+    def load_settings(self):
+        try:
+            with shelve.open(self.shelve_file) as shelf:
+                return shelf.get("settings", {})
+        except Exception as e:
+            return {}
+            
+    def save_settings(self):
+        try:
+            with shelve.open(self.shelve_file) as shelf:
+                shelf["settings"] = {
+                    "barrel_inches" : self.ids.barrel_inch.text,
+                    "total_tank_volume" : self.ids.total_tank_volume.text,
+                    "number_of_tanks" : self.ids.number_of_tanks.text,
+                }
+                self.show_result_dialog("Success", "Settings Saved")
+        except Exception as e:
+            self.show_error_dialog("Error")
+            return      
+
 class ToBBLScreen(MDScreen, DialogMixin):  
     def calculate_volume(self):
         dip = self.ids.dip_input.text
@@ -121,7 +163,7 @@ class GenerateReportScreen(MDScreen, DialogMixin):
         self.is_filled = is_filled
         
         if self.is_filled:
-            self.ids.fill_fields.height = 80
+            self.ids.fill_fields.height = 60
             self.ids.fill_fields.opacity = 1
             self.ids.before_fill.disabled = False
             self.ids.after_fill.disabled = False 
@@ -188,7 +230,8 @@ class GenerateReportScreen(MDScreen, DialogMixin):
                 
             before_fill_vol = Calculations.calculate_bbls(before_fill)
             after_fill_vol = Calculations.calculate_bbls(after_fill)
-                
+            
+            total_fill = after_fill_vol - before_fill_vol    
             total_consum = (first_vol - before_fill_vol) + (after_fill_vol - last_vol)
                 
             result = (
@@ -200,7 +243,8 @@ class GenerateReportScreen(MDScreen, DialogMixin):
                     f"After refill: {after_fill_vol}bbl\n"
                     f"6{self.last_time}: {last_vol}bbl ({last_dip}\")\n\n"
                     
-                    f"Total consumption in 12hrs: {total_consum}bbl"
+                    f"Total consumption in 12hrs: {total_consum}bbl\n"
+                    f"Total refilled: {total_fill}bbl"
                 )
 
         else:
@@ -222,15 +266,20 @@ kv_content = """
 #:kivy 2.1.0
 
 <MainMenuScreen>:
+    MDIconButton:
+        icon: 'cog'
+        pos_hint: {'x': 0.9, 'top': 1}
+        on_release: root.manager.current = 'settings'
+        
+    MDIconButton:
+        icon: 'theme-light-dark'
+        pos_hint: {'x': 0, 'top': 1}
+        on_release: root.toggle_theme()
+            
     MDBoxLayout:
         orientation: 'vertical'
         padding: dp(20)
         spacing: dp(20)
-        
-        MDIconButton:
-            icon: 'theme-light-dark'
-            pos_hint: {'x': 0, 'top': 1}
-            on_release: root.toggle_theme()
         
         MDLabel:
             text: 'Water Tank Volume Calculator'
@@ -257,7 +306,56 @@ kv_content = """
             pos_hint: {'center_x': .5}
             on_release: 
                 root.manager.current = 'generate_report'
+                
+<SettingScreen>
+    MDIconButton:
+        icon: 'arrow-left'
+        pos_hint: {'x': 0, 'top': 1}
+        on_release: root.manager.current = 'main_menu'
+    
+    MDBoxLayout:
+        orientation: 'vertical'
+        spacing: dp(20)
+        padding: dp(20)
+        
+        MDLabel:
+            text: 'Settings'
+            halign: 'center'
+            font_style: 'H4'
+        
+        MDTextField:
+            id: barrel_inch
+            hint_text: 'Barrel Per Inch'
+            helper_text: 'Inch'
+            helper_text_mode: 'persistent'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
+            
+        MDTextField:
+            id: total_tank_volume
+            hint_text: 'Tank Capacity'
+            helper_text: 'bbl'
+            helper_text_mode: 'persistent'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
 
+        MDTextField:
+            id: number_of_tanks
+            hint_text: 'Number of Tanks'
+            input_type: 'number'
+            size_hint_x: 0.8
+            pos_hint: {'center_x': .5}
+            
+        MDRaisedButton:
+            text: 'Save'
+            pos_hint: {'center_x': .5}
+            size_hint_x: 0.7
+            on_release: root.save_settings()
+        
+
+            
 <ToBBLScreen>:
     MDBoxLayout:
         orientation: 'vertical'
@@ -435,6 +533,8 @@ kv_content = """
 ScreenManager:
     MainMenuScreen:
         name: 'main_menu'
+    SettingScreen:
+        name: 'settings'
     ToBBLScreen:
         name: 'to_bbl'
     ToInchesScreen:
@@ -466,7 +566,7 @@ class WaterCalc(MDApp):
             if current_screen == 'main_menu':
                 # If on main menu, exit the app
                 return False
-            elif current_screen in ['to_bbl', 'to_inches', 'generate_report']:
+            elif current_screen in ['settings', 'to_bbl', 'to_inches', 'generate_report']:
                 # Navigate back to main menu
                 self.root.current = 'main_menu'
                 return True
